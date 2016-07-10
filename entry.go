@@ -112,6 +112,21 @@ func (entry Entry) log(level Level, msg string) {
 	if level <= PanicLevel {
 		panic(&entry)
 	}
+
+	if entry.Logger.savespace {
+		if fd, ok := entry.Logger.Out.(*os.File); ok {
+			if fs, err := fd.Stat(); err == nil {
+				if fs.Size() > int64(entry.Logger.Fmaxsize) {
+					if newwrter := entry.Logger.createIo(); newwrter != nil {
+						fd.Close()
+						entry.Logger.Out = newwrter
+						return
+					}
+
+				}
+			}
+		}
+	}
 }
 
 func (entry *Entry) Debug(args ...interface{}) {

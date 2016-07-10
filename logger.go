@@ -1,9 +1,18 @@
 package logrus
 
 import (
+	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 	"sync"
+	"time"
+)
+
+const (
+	defmaxfilesize  = 1024 * 1024 * 10
+	defmaxfilecount = 10
 )
 
 type Logger struct {
@@ -28,6 +37,13 @@ type Logger struct {
 	Level Level
 	// Used to sync writing to the log.
 	mu sync.Mutex
+
+	savespace bool     // 是否节省空间
+	Fcount    int      // 文件个数
+	Fmaxsize  int      // 最大文件大小
+	file      []string // 文件列表
+	folder    string
+	name      string
 }
 
 // Creates a new logger. Configuration should be set by changing `Formatter`,
@@ -49,6 +65,112 @@ func New() *Logger {
 		Hooks:     make(LevelHooks),
 		Level:     InfoLevel,
 	}
+}
+
+// 快速创建一个在当前执行程序所在目录里日志文件
+func NewSSLog(folder string, name string, lvl int) *Logger {
+	l := &Logger{
+		Out: nil,
+		Formatter: &TextFormatter{
+			DisableColors:   true,
+			TimestampFormat: "2006-01-02 15:04:05",
+		},
+		Hooks:     make(LevelHooks),
+		Level:     Level(lvl) % (DebugLevel + 1),
+		savespace: true,
+		Fcount:    defmaxfilecount,
+		Fmaxsize:  defmaxfilesize,
+		folder:    folder,
+		name:      name,
+	}
+
+	wrter := l.createIo()
+	if wrter == nil {
+		return nil
+	}
+	l.Out = wrter
+	return l
+}
+func getProcAbsDir() (string, error) {
+	abs, err := filepath.Abs(os.Args[0])
+	if err != nil {
+		return "", nil
+	}
+	return filepath.Dir(abs), nil
+}
+func isPathExist(path string) bool {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+func getTimeStr() string {
+	t := time.Now()
+	year, month, day := t.Date()
+	hour, minute, second := t.Clock()
+	str := fmt.Sprintf("%04d%02d%02d%02d%02d%02d", year, month, day, hour, minute, second)
+	return str
+}
+func isFile(w io.Writer) bool {
+	f, ok := w.(*os.File)
+	if ok == false {
+		return false
+	}
+
+	fs, err := f.Stat()
+	if err != nil {
+		return false
+	}
+
+	return fs.Mode().IsRegular()
+}
+
+func (l *Logger) createIo() io.Writer {
+	if l.savespace == false {
+		return l.Out
+	}
+	procfolder, err := getProcAbsDir()
+	if err != nil {
+		return nil
+	}
+	//	procfolder = "/Users/xuhaibin/Desktop/"
+	timestr := getTimeStr()
+	logfolder := filepath.Join(procfolder, l.folder, timestr)
+	if len(l.file) > 0 {
+		logfolder = filepath.Dir(l.file[0])
+	}
+
+	if isPathExist(logfolder) == false {
+		err = os.MkdirAll(logfolder, os.ModePerm)
+		if err != nil {
+			fmt.Println("mkdirall return nil", err)
+			return nil
+		}
+	}
+
+	fileext := ""
+	filename := l.name
+	extdotindex := strings.LastIndex(l.name, ".")
+	if extdotindex != -1 {
+		fileext = l.name[extdotindex:]
+		filename = l.name[:extdotindex]
+	}
+
+	logfilename := fmt.Sprintf("%s/%s-%s%s", logfolder, filename, timestr, fileext)
+
+	file, err := os.OpenFile(logfilename, os.O_RDWR|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return nil
+	}
+
+	l.file = append(l.file, logfilename)
+	if len(l.file) > l.Fcount {
+		oldestfile := l.file[0]
+		os.Remove(oldestfile)
+		l.file = l.file[1:]
+	}
+
+	return file
 }
 
 // Adds a field to the log entry, note that you it doesn't log until you call

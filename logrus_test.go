@@ -11,6 +11,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSaveSpace(t *testing.T) {
+	l := NewSSLog("log", "base.log", 5)
+	if l == nil {
+		t.Fatal("l is nil")
+	}
+	for i := 0; i != 2*1024*1024; i++ {
+		l.WithFields(Fields{
+			"version":   "HELLO WORLD",
+			"buildtime": "BYEBYE WORLD",
+			"log":       i,
+		}).Info("test LINE")
+	}
+
+}
+func TestNormalConsole(t *testing.T) {
+	l := New()
+	for i := 0; i != 2*1024*1024; i++ {
+		l.WithFields(Fields{
+			"version":   "HELLO WORLD",
+			"buildtime": "BYEBYE WORLD",
+			"log":       i,
+		}).Info("test LINE")
+	}
+
+}
+
 func LogAndAssertJSON(t *testing.T, log func(*Logger), assertions func(fields Fields)) {
 	var buffer bytes.Buffer
 	var fields Fields

@@ -45,6 +45,48 @@ time="2015-03-26T01:27:38-04:00" level=panic msg="It's over 9000!" animal=orca s
 time="2015-03-26T01:27:38-04:00" level=fatal msg="The ice breaks!" err=&{0x2082280c0 map[animal:orca size:9009] 2015-03-26 01:27:38.441574009 -0400 EDT panic It's over 9000!} number=100 omg=true
 exit status 1
 ```
+增加 在当前进程执行文件所在目录快速创建日志文件的接口
+
+```go
+
+l := NewSSLog("log", "base.log", 5)
+  if l == nil {
+    t.Fatal("l is nil")
+  }
+  for i := 0; i != 2*1024*1024; i++ {
+    l.WithFields(Fields{
+      "version":   "HELLO WORLD",
+      "buildtime": "BYEBYE WORLD",
+      "log":       i,
+    }).Info("test LINE")
+  }
+
+```
+
+可以指定日志文件个数,单个文件大小,随着程序运行时间增加,更老的日志文件会被删除,可以根据业务经验来保留最近一段时间日志,以避免写满硬盘导致业务异常
+
+```go
+l := NewSSLog("log", "base.log", 5)
+
+l.Fcount = 20
+l.Fmaxsize = 20 * 1024 * 1024
+
+```
+
+增强了包括console在内的日志时间戳
+
+```text
+INFO[0004:533] test LINE                                     buildtime=BYEBYE WORLD log=147617 version=HELLO WORLD
+INFO[0004:533] test LINE                                     buildtime=BYEBYE WORLD log=147618 version=HELLO WORLD
+INFO[0004:533] test LINE                                     buildtime=BYEBYE WORLD log=147619 version=HELLO WORLD
+```
+
+```text
+time="2016-07-10 14:21:41:349" level=info msg="test LINE" buildtime="BYEBYE WORLD" log=717914 version="HELLO WORLD" 
+time="2016-07-10 14:21:41:349" level=info msg="test LINE" buildtime="BYEBYE WORLD" log=717915 version="HELLO WORLD" 
+time="2016-07-10 14:21:41:349" level=info msg="test LINE" buildtime="BYEBYE WORLD" log=717916 version="HELLO WORLD" 
+
+```
 
 #### Example
 

@@ -28,8 +28,11 @@ func init() {
 	isTerminal = IsTerminal()
 }
 
-func miniTS() int {
-	return int(time.Since(baseTimestamp) / time.Second)
+func miniTS() string {
+	t := time.Now()
+	sec := t.Sub(baseTimestamp) / time.Second
+	millisec := t.Nanosecond() / 1e6
+	return fmt.Sprintf("%04d:%03d", sec, millisec)
 }
 
 type TextFormatter struct {
@@ -56,6 +59,9 @@ type TextFormatter struct {
 	DisableSorting bool
 }
 
+func formatMilliSec(t time.Time, format string) string {
+	return fmt.Sprintf("%s:%03d", t.Format(format), t.Nanosecond()/1e6)
+}
 func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 	var keys []string = make([]string, 0, len(entry.Data))
 	for k := range entry.Data {
@@ -81,7 +87,7 @@ func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 		f.printColored(b, entry, keys, timestampFormat)
 	} else {
 		if !f.DisableTimestamp {
-			f.appendKeyValue(b, "time", entry.Time.Format(timestampFormat))
+			f.appendKeyValue(b, "time", formatMilliSec(entry.Time, timestampFormat))
 		}
 		f.appendKeyValue(b, "level", entry.Level.String())
 		if entry.Message != "" {
@@ -112,9 +118,9 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 	levelText := strings.ToUpper(entry.Level.String())[0:4]
 
 	if !f.FullTimestamp {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d] %-44s ", levelColor, levelText, miniTS(), entry.Message)
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %-44s ", levelColor, levelText, miniTS(), entry.Message)
 	} else {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %-44s ", levelColor, levelText, entry.Time.Format(timestampFormat), entry.Message)
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %-44s ", levelColor, levelText, formatMilliSec(entry.Time, timestampFormat), entry.Message)
 	}
 	for _, k := range keys {
 		v := entry.Data[k]
