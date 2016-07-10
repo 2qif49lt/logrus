@@ -49,10 +49,12 @@ exit status 1
 
 ```go
 
-l := NewSSLog("log", "base.log", 5)
+func TestSaveSpace(t *testing.T) {
+  l := NewSSLog("log", "base.log", 5)
   if l == nil {
     t.Fatal("l is nil")
   }
+ 
   for i := 0; i != 2*1024*1024; i++ {
     l.WithFields(Fields{
       "version":   "HELLO WORLD",
@@ -60,16 +62,24 @@ l := NewSSLog("log", "base.log", 5)
       "log":       i,
     }).Info("test LINE")
   }
+}
 
 ```
 
 可以指定日志文件个数,单个文件大小,随着程序运行时间增加,更老的日志文件会被删除,可以根据业务经验来保留最近一段时间日志,以避免写满硬盘导致业务异常
+也可以指定特点函数以处理老文件
 
 ```go
 l := NewSSLog("log", "base.log", 5)
 
 l.Fcount = 20
 l.Fmaxsize = 20 * 1024 * 1024
+
+ l.SetFileFunc(func(path string) error {
+    Infoln("delete", path)
+    return os.Remove(path)
+  })
+
 
 ```
 

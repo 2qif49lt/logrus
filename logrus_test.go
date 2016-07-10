@@ -3,6 +3,7 @@ package logrus
 import (
 	"bytes"
 	"encoding/json"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,6 +17,11 @@ func TestSaveSpace(t *testing.T) {
 	if l == nil {
 		t.Fatal("l is nil")
 	}
+	l.SetFileFunc(func(path string) error {
+		Infoln("delete", path)
+		return os.Remove(path)
+	})
+
 	for i := 0; i != 2*1024*1024; i++ {
 		l.WithFields(Fields{
 			"version":   "HELLO WORLD",
@@ -23,7 +29,6 @@ func TestSaveSpace(t *testing.T) {
 			"log":       i,
 		}).Info("test LINE")
 	}
-
 }
 func TestNormalConsole(t *testing.T) {
 	l := New()

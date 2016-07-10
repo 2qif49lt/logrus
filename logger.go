@@ -15,6 +15,21 @@ const (
 	defmaxfilecount = 10
 )
 
+type FileHandler interface {
+	DoFile(path string) error
+}
+type FileFunc func(string) error
+
+func (f FileFunc) DoFile(path string) error {
+	fmt.Println("dofile", path)
+	return f(path)
+}
+
+var DefaultFileFunc = func(path string) error {
+	fmt.Println("defaultfilefunc", path)
+	return os.Remove(path)
+}
+
 type Logger struct {
 	// The logs are `io.Copy`'d to this in a mutex. It's common to set this to a
 	// file, or leave it default which is `os.Stderr`. You can also set this to
@@ -44,6 +59,7 @@ type Logger struct {
 	file      []string // 文件列表
 	folder    string
 	name      string
+	fh        FileHandler
 }
 
 // Creates a new logger. Configuration should be set by changing `Formatter`,
@@ -82,6 +98,7 @@ func NewSSLog(folder string, name string, lvl int) *Logger {
 		Fmaxsize:  defmaxfilesize,
 		folder:    folder,
 		name:      name,
+		fh:        FileFunc(DefaultFileFunc),
 	}
 
 	wrter := l.createIo()
@@ -126,6 +143,7 @@ func isFile(w io.Writer) bool {
 }
 
 func (l *Logger) createIo() io.Writer {
+
 	if l.savespace == false {
 		return l.Out
 	}
@@ -133,7 +151,7 @@ func (l *Logger) createIo() io.Writer {
 	if err != nil {
 		return nil
 	}
-	//	procfolder = "/Users/xuhaibin/Desktop/"
+
 	timestr := getTimeStr()
 	logfolder := filepath.Join(procfolder, l.folder, timestr)
 	if len(l.file) > 0 {
@@ -164,13 +182,31 @@ func (l *Logger) createIo() io.Writer {
 	}
 
 	l.file = append(l.file, logfilename)
+	fmt.Println(l.file)
 	if len(l.file) > l.Fcount {
 		oldestfile := l.file[0]
-		os.Remove(oldestfile)
+		if l.fh != nil {
+			err = l.fh.DoFile(oldestfile)
+			if err != nil {
+				fmt.Println("dofile return", err)
+			} else {
+				fmt.Println("dofile return succ")
+			}
+		}
 		l.file = l.file[1:]
 	}
 
 	return file
+}
+func (l *Logger) SetFileHandler(handler FileHandler) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.fh = handler
+}
+
+func (l *Logger) SetFileFunc(handler func(string) error) {
+	l.SetFileHandler(FileFunc(handler))
 }
 
 // Adds a field to the log entry, note that you it doesn't log until you call
