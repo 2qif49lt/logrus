@@ -84,7 +84,7 @@ func New() *Logger {
 }
 
 // 快速创建一个在当前执行程序所在目录里日志文件
-func NewSSLog(folder string, name string, lvl int) *Logger {
+func NewSSLog(folder string, name string, lvl Level) *Logger {
 	l := &Logger{
 		Out: nil,
 		Formatter: &TextFormatter{
@@ -92,7 +92,7 @@ func NewSSLog(folder string, name string, lvl int) *Logger {
 			TimestampFormat: "2006-01-02 15:04:05",
 		},
 		Hooks:     make(LevelHooks),
-		Level:     Level(lvl) % (DebugLevel + 1),
+		Level:     lvl % (DebugLevel + 1),
 		savespace: true,
 		Fcount:    defmaxfilecount,
 		Fmaxsize:  defmaxfilesize,
@@ -182,7 +182,6 @@ func (l *Logger) createIo() io.Writer {
 	}
 
 	l.file = append(l.file, logfilename)
-	fmt.Println(l.file)
 	if len(l.file) > l.Fcount {
 		oldestfile := l.file[0]
 		if l.fh != nil {
