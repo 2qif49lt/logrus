@@ -12,6 +12,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSetDefaultFileOut(t *testing.T) {
+	SetDefaultFileOut()
+	for i := 0; i != 2*1024*1024; i++ {
+		Debug("a", "b", 123)
+		WithFields(Fields{
+			"version":   "HELLO WORLD",
+			"buildtime": "BYEBYE WORLD",
+			"log":       i,
+		}).Info("test LINE")
+	}
+}
 func TestSaveSpace(t *testing.T) {
 	l := NewSSLog("log", "base.log", 5)
 	if l == nil {

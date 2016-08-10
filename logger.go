@@ -21,12 +21,10 @@ type FileHandler interface {
 type FileFunc func(string) error
 
 func (f FileFunc) DoFile(path string) error {
-	fmt.Println("dofile", path)
 	return f(path)
 }
 
 var DefaultFileFunc = func(path string) error {
-	fmt.Println("defaultfilefunc", path)
 	return os.Remove(path)
 }
 

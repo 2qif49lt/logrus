@@ -9,6 +9,9 @@ var (
 	std = New()
 )
 
+func SetDefaultFileOut() {
+	std = NewSSLog("log", "logrus.log", InfoLevel)
+}
 func StandardLogger() *Logger {
 	return std
 }
