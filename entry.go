@@ -6,11 +6,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"time"
 )
 
 // Defines the key when adding errors using WithError.
-var ErrorKey = "error"
+var (
+	ErrorKey   = "error"
+	DefaultKey = "content"
+)
 
 // An entry is the final or intermediate Logrus logging entry. It contains all
 // the fields passed with WithField{,s}. It's finally logged when Debug, Info,
@@ -68,13 +72,43 @@ func (entry *Entry) WithField(key string, value interface{}) *Entry {
 }
 
 // Add a json format string to Entry.
-func (entry *Entry) WithTryJson(js string) *Entry {
+func (entry *Entry) WithTryJson(value interface{}) *Entry {
 	tmp := make(map[string]interface{})
-	err := json.Unmarshal([]byte(js), &tmp)
-	if err != nil {
-		return entry.WithField("content", js)
+
+	v := reflect.Indirect(reflect.ValueOf(value))
+	t := v.Type()
+
+	switch t.Kind() {
+	case reflect.Struct:
+		fieldnum := v.NumField()
+		for idx := 0; idx != fieldnum; idx++ {
+			if v.Field(idx).CanInterface() {
+				tmp[t.Field(idx).Name] = v.Field(idx).Interface()
+			} else {
+				tmp[t.Field(idx).Name] = "unexported"
+			}
+		}
+	case reflect.String:
+		err := json.Unmarshal([]byte(v.String()), &tmp)
+		if err != nil {
+			goto NORMAL
+		}
+	case reflect.Map:
+		if t.Key().Kind() != reflect.String {
+			goto NORMAL
+		}
+		vkey := v.MapKeys()
+		for _, val := range vkey {
+			tmp[val.String()] = v.MapIndex(val).Interface()
+		}
+	default:
+		goto NORMAL
 	}
+
 	return entry.WithFields(Fields(tmp))
+
+NORMAL:
+	return entry.WithField(DefaultKey, v.Interface())
 }
 
 // Add a map of fields to the Entry.

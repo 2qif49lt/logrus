@@ -66,8 +66,8 @@ func WithField(key string, value interface{}) *Entry {
 }
 
 // WithJson
-func WithTryJson(js string) *Entry {
-	return std.WithTryJson(js)
+func WithTryJson(value interface{}) *Entry {
+	return std.WithTryJson(value)
 }
 
 // WithFields creates an entry from the standard logger and adds multiple

@@ -14,7 +14,17 @@ import (
 
 // go test -v -test.run TestWithJson
 func TestWithJson(t *testing.T) {
-	WithTryJson("hellowlfd").Infoln(123)
+	type soldier struct {
+		Attack  int
+		Blive   bool
+		country string
+	}
+	s1 := soldier{1, true, "cn"}
+	m1 := map[string]int{"a": 1, "b": 2, "c": 3}
+	str1 := "hello tom"
+	WithTryJson(123).Infoln(123)
+	WithTryJson("hellowlfd").Infoln("hello")
+	WithTryJson(&str1).Infoln("tom")
 	WithTryJson(`{
 		"hello":1,
 		"world":"abc",
@@ -24,6 +34,10 @@ func TestWithJson(t *testing.T) {
 			"killer":["bob","foo","lee"]
 		}
 		}`).Infoln("英雄多么寂寞")
+	WithTryJson(&s1).Infoln("soldier")
+	WithField("wtf", &s1).Infoln("soldier WithField")
+	WithTryJson(&m1).Infoln("map")
+	WithField("wtf", m1).Infoln("map WithField")
 }
 func TestSetDefaultFileOut(t *testing.T) {
 	SetDefaultFileOut()

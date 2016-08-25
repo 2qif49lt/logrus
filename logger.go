@@ -213,8 +213,8 @@ func (logger *Logger) WithField(key string, value interface{}) *Entry {
 	return NewEntry(logger).WithField(key, value)
 }
 
-func (logger *Logger) WithTryJson(js string) *Entry {
-	return NewEntry(logger).WithTryJson(js)
+func (logger *Logger) WithTryJson(value interface{}) *Entry {
+	return NewEntry(logger).WithTryJson(value)
 }
 
 // Adds a struct of fields to the log entry. All it does is call `WithField` for
