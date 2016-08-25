@@ -12,6 +12,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// go test -v -test.run TestWithJson
+func TestWithJson(t *testing.T) {
+	WithTryJson("hellowlfd").Infoln(123)
+	WithTryJson(`{
+		"hello":1,
+		"world":"abc",
+		"array":[1,2,3],
+		"st":{
+			"hero":"loser",
+			"killer":["bob","foo","lee"]
+		}
+		}`).Infoln("英雄多么寂寞")
+}
 func TestSetDefaultFileOut(t *testing.T) {
 	SetDefaultFileOut()
 	for i := 0; i != 2*1024*1024; i++ {

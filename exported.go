@@ -65,6 +65,11 @@ func WithField(key string, value interface{}) *Entry {
 	return std.WithField(key, value)
 }
 
+// WithJson
+func WithTryJson(js string) *Entry {
+	return std.WithTryJson(js)
+}
+
 // WithFields creates an entry from the standard logger and adds multiple
 // fields to it. This is simply a helper for `WithField`, invoking it
 // once for each field.

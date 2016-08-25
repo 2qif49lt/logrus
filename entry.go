@@ -2,6 +2,7 @@ package logrus
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -64,6 +65,16 @@ func (entry *Entry) WithError(err error) *Entry {
 // Add a single field to the Entry.
 func (entry *Entry) WithField(key string, value interface{}) *Entry {
 	return entry.WithFields(Fields{key: value})
+}
+
+// Add a json format string to Entry.
+func (entry *Entry) WithTryJson(js string) *Entry {
+	tmp := make(map[string]interface{})
+	err := json.Unmarshal([]byte(js), &tmp)
+	if err != nil {
+		return entry.WithField("content", js)
+	}
+	return entry.WithFields(Fields(tmp))
 }
 
 // Add a map of fields to the Entry.
